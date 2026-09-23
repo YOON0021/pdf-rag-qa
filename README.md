@@ -31,7 +31,7 @@ PDF를 올리고 질문하면 **문서 내용만 근거로** 답변하고, **출
 ## 실행 방법
 
 ```bash
-git clone https://github.com/<your-id>/pdf-rag-qa.git
+git clone https://github.com/YOON0021/pdf-rag-qa.git
 cd pdf-rag-qa
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
