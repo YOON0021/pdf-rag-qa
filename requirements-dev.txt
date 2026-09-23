@@ -1,0 +1,2 @@
+-r requirements.txt
+fpdf2  # scripts/make_sample_pdf.py

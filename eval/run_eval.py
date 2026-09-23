@@ -4,8 +4,9 @@ LLM을 호출하지 않으므로 API 비용이 들지 않는다.
 청크 크기 / 오버랩 / 임베딩 모델을 바꿔가며 결과를 비교해 보자.
 
 사용법:
-    python -m eval.run_eval --pdf data/sample.pdf --questions eval/questions.json
-    python -m eval.run_eval --pdf data/sample.pdf --questions eval/questions.json --chunk-sizes 300 500 800 1200
+    python -m eval.run_eval                          # 샘플 PDF + 샘플 질문셋
+    python -m eval.run_eval --chunk-sizes 100 200 800
+    python -m eval.run_eval --pdf data/my.pdf --questions eval/questions.json
 """
 
 import argparse
@@ -43,8 +44,8 @@ def evaluate(pdf: str, questions: list[dict], chunk_size: int, overlap: int, ks:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pdf", required=True)
-    ap.add_argument("--questions", default="eval/questions.json")
+    ap.add_argument("--pdf", default="eval/sample.pdf")
+    ap.add_argument("--questions", default="eval/sample_questions.json")
     ap.add_argument("--chunk-sizes", type=int, nargs="+", default=[800])
     ap.add_argument("--overlap", type=int, default=150)
     ap.add_argument("--k", type=int, nargs="+", default=[1, 3, 5])

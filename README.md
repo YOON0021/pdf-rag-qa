@@ -44,18 +44,25 @@ streamlit run app.py
 
 ## 검색 성능 평가
 
-`eval/questions.json`에 질문과 정답 페이지를 적고 실행합니다.
+샘플 PDF(가상 회사의 취업규칙 6페이지)와 질문 14개가 포함되어 있어서 바로 실행할 수 있습니다.
 
 ```bash
-python -m eval.run_eval --pdf data/my.pdf --questions eval/questions.json --chunk-sizes 300 500 800 1200
+python -m eval.run_eval --chunk-sizes 100 200 800
 ```
-
-출력 예시:
 
 | chunk_size | chunks | hit@1 | hit@3 | hit@5 | mrr |
 |---|---|---|---|---|---|
-| 300 | ... | ... | ... | ... | ... |
-| 800 | ... | ... | ... | ... | ... |
+| 100 | 16 | 0.93 | 0.93 | 1.00 | 0.95 |
+| 200 | 6 | 0.93 | 1.00 | 1.00 | 0.96 |
+| 800 | 6 | 0.93 | 1.00 | 1.00 | 0.96 |
+
+내 PDF로 평가하려면 `eval/questions.json`에 질문과 정답 페이지를 적고 실행합니다.
+
+```bash
+python -m eval.run_eval --pdf data/my.pdf --questions eval/questions.json
+```
+
+샘플 PDF를 다시 만들려면 `pip install -r requirements-dev.txt` 후 `python scripts/make_sample_pdf.py`를 실행합니다.
 
 - **hit@k**: 정답 페이지가 상위 k개 검색 결과 안에 들어온 비율
 - **MRR**: 정답이 처음 나온 순위의 역수 평균 (1에 가까울수록 좋음)
@@ -68,9 +75,13 @@ python -m eval.run_eval --pdf data/my.pdf --questions eval/questions.json --chun
 │   ├── loader.py       # PDF 로드 + 청크 분할
 │   ├── store.py        # 임베딩 + Chroma 저장/검색
 │   └── llm.py          # 프롬프트 구성 + Claude 호출 (스트리밍)
-└── eval/
-    ├── run_eval.py     # 검색 성능 평가
-    └── questions.json  # 평가용 질문셋
+├── eval/
+│   ├── run_eval.py             # 검색 성능 평가
+│   ├── sample.pdf              # 평가용 샘플 문서
+│   ├── sample_questions.json   # 샘플 문서용 질문셋
+│   └── questions.json          # 내 문서용 질문셋 템플릿
+└── scripts/
+    └── make_sample_pdf.py      # 샘플 PDF 생성
 ```
 
 ## 앞으로 개선할 점
