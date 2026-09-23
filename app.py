@@ -38,6 +38,11 @@ with st.sidebar:
     indexed = store.sources()
     st.caption("인덱싱된 문서: " + (", ".join(indexed) if indexed else "없음"))
     k = st.slider("검색할 청크 수 (top-k)", 1, 10, 4)
+    mode = st.radio(
+        "검색 방식",
+        ["hybrid", "vector"],
+        format_func={"hybrid": "하이브리드 (벡터 + BM25)", "vector": "벡터만"}.get,
+    )
     if indexed and st.button("전체 초기화"):
         store.reset()
         st.session_state.messages = []
@@ -56,7 +61,7 @@ if question := st.chat_input("문서에 대해 질문하세요"):
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        hits = store.search(question, k=k)
+        hits = store.search(question, k=k, mode=mode)
         if not hits:
             answer = "먼저 사이드바에서 PDF를 업로드하고 인덱싱해 주세요."
             st.markdown(answer)
@@ -64,6 +69,6 @@ if question := st.chat_input("문서에 대해 질문하세요"):
             answer = st.write_stream(answer_stream(question, hits))
             with st.expander("📚 출처"):
                 for i, h in enumerate(hits, start=1):
-                    st.markdown(f"**[{i}] {h.source} · p.{h.page}** (유사도 {h.score:.2f})")
+                    st.markdown(f"**[{i}] {h.source} · p.{h.page}** (점수 {h.score:.3f})")
                     st.caption(h.text[:400] + ("…" if len(h.text) > 400 else ""))
     st.session_state.messages.append({"role": "assistant", "content": answer})

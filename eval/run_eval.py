@@ -5,7 +5,7 @@ LLM을 호출하지 않으므로 API 비용이 들지 않는다.
 
 사용법:
     python -m eval.run_eval                          # 샘플 PDF + 샘플 질문셋
-    python -m eval.run_eval --chunk-sizes 100 200 800
+    python -m eval.run_eval --chunk-sizes 100 200 800 --modes vector hybrid
     python -m eval.run_eval --pdf data/my.pdf --questions eval/questions.json
 """
 
@@ -17,15 +17,12 @@ from rag.loader import chunk_pdf
 from rag.store import EMBED_MODEL, VectorStore
 
 
-def evaluate(pdf: str, questions: list[dict], chunk_size: int, overlap: int, ks: list[int]) -> dict:
-    store = VectorStore(collection="eval", path=tempfile.mkdtemp())
-    chunks = chunk_pdf(pdf, chunk_size, overlap)
-    store.add(chunks)
+def evaluate(store: VectorStore, questions: list[dict], mode: str, ks: list[int]) -> dict:
 
     hits_at = {k: 0 for k in ks}
     mrr = 0.0
     for q in questions:
-        pages = [h.page for h in store.search(q["question"], k=max(ks))]
+        pages = [h.page for h in store.search(q["question"], k=max(ks), mode=mode)]
         answer_pages = set(q["pages"])
         rank = next((i for i, p in enumerate(pages, start=1) if p in answer_pages), None)
         if rank:
@@ -35,8 +32,6 @@ def evaluate(pdf: str, questions: list[dict], chunk_size: int, overlap: int, ks:
 
     n = len(questions)
     return {
-        "chunk_size": chunk_size,
-        "chunks": len(chunks),
         **{f"hit@{k}": hits_at[k] / n for k in ks},
         "mrr": mrr / n,
     }
@@ -49,13 +44,20 @@ def main() -> None:
     ap.add_argument("--chunk-sizes", type=int, nargs="+", default=[800])
     ap.add_argument("--overlap", type=int, default=150)
     ap.add_argument("--k", type=int, nargs="+", default=[1, 3, 5])
+    ap.add_argument("--modes", nargs="+", default=["vector", "hybrid"], choices=["vector", "hybrid"])
     args = ap.parse_args()
 
     with open(args.questions, encoding="utf-8") as f:
         questions = json.load(f)
 
     print(f"임베딩 모델: {EMBED_MODEL} | 질문 {len(questions)}개\n")
-    rows = [evaluate(args.pdf, questions, cs, min(args.overlap, cs // 2), args.k) for cs in args.chunk_sizes]
+    rows = []
+    for cs in args.chunk_sizes:
+        store = VectorStore(collection="eval", path=tempfile.mkdtemp())
+        chunks = chunk_pdf(args.pdf, cs, min(args.overlap, cs // 2))
+        store.add(chunks)
+        for mode in args.modes:
+            rows.append({"chunk_size": cs, "chunks": len(chunks), "mode": mode, **evaluate(store, questions, mode, args.k)})
 
     # README에 바로 붙여넣을 수 있는 마크다운 표
     cols = list(rows[0].keys())

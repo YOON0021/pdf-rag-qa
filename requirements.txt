@@ -2,5 +2,6 @@ anthropic
 chromadb
 pypdf
 python-dotenv
+rank-bm25
 sentence-transformers
 streamlit
